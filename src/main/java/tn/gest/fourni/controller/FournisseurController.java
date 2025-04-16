@@ -1,52 +1,43 @@
 package tn.gest.fourni.controller;
 
-import java.util.List;
+import tn.gest.fourni.DTO.FournisseurDTO;
+import tn.gest.fourni.service.FournisseurService;
 
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.CrossOrigin;
-import org.springframework.web.bind.annotation.DeleteMapping;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.PutMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
-import tn.gest.fourni.models.Fournisseur;
-import tn.gest.fourni.service.FournisseurService;
+import java.util.List;
 
 @RestController
 @RequestMapping("/api/fournisseurs")
 @CrossOrigin(origins = "http://localhost:4200")
 public class FournisseurController {
 
-    private final FournisseurService fournisseurService;
-
-    public FournisseurController(FournisseurService fournisseurService) {
-        this.fournisseurService = fournisseurService;
-    }
+    @Autowired
+    private FournisseurService fournisseurService;
 
     @GetMapping
-    public ResponseEntity<List<Fournisseur>> getAllFournisseurs() {
+    public ResponseEntity<List<FournisseurDTO>> getAllFournisseurs() {
         return ResponseEntity.ok(fournisseurService.getAllFournisseurs());
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<Fournisseur> getFournisseurById(@PathVariable Long id) {
+    public ResponseEntity<FournisseurDTO> getFournisseurById(@PathVariable Long id) {
         return ResponseEntity.ok(fournisseurService.getFournisseurById(id));
     }
 
     @PostMapping
-    public ResponseEntity<Fournisseur> createFournisseur(@RequestBody Fournisseur fournisseur) {
-        return new ResponseEntity<>(fournisseurService.createFournisseur(fournisseur), HttpStatus.CREATED);
+    public ResponseEntity<FournisseurDTO> createFournisseur(@RequestBody FournisseurDTO fournisseurDTO) {
+        FournisseurDTO created = fournisseurService.createFournisseur(fournisseurDTO);
+        return new ResponseEntity<>(created, HttpStatus.CREATED);
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<Fournisseur> updateFournisseur(@PathVariable Long id, @RequestBody Fournisseur fournisseur) {
-        return ResponseEntity.ok(fournisseurService.updateFournisseur(id, fournisseur));
+    public ResponseEntity<FournisseurDTO> updateFournisseur(@PathVariable Long id, @RequestBody FournisseurDTO fournisseurDTO) {
+        FournisseurDTO updated = fournisseurService.updateFournisseur(id, fournisseurDTO);
+        return ResponseEntity.ok(updated);
     }
 
     @DeleteMapping("/{id}")
@@ -56,17 +47,18 @@ public class FournisseurController {
     }
 
     @GetMapping("/qualite/{qualite}")
-    public ResponseEntity<List<Fournisseur>> getByQualiteService(@PathVariable String qualite) {
+    public ResponseEntity<List<FournisseurDTO>> getByQualiteService(@PathVariable String qualite) {
         return ResponseEntity.ok(fournisseurService.findFournisseursByQualiteService(qualite));
     }
 
     @PostMapping("/{id}/evaluation")
-    public ResponseEntity<Fournisseur> evaluerFournisseur(@PathVariable Long id, @RequestParam Double note) {
-        return ResponseEntity.ok(fournisseurService.evaluerFournisseur(id, note));
+    public ResponseEntity<FournisseurDTO> evaluerFournisseur(@PathVariable Long id, @RequestParam Double note) {
+        FournisseurDTO evaluated = fournisseurService.evaluerFournisseur(id, note);
+        return ResponseEntity.ok(evaluated);
     }
 
     @GetMapping("/top")
-    public ResponseEntity<List<Fournisseur>> getTopFournisseurs() {
+    public ResponseEntity<List<FournisseurDTO>> getTopFournisseurs() {
         return ResponseEntity.ok(fournisseurService.getFournisseursByNoteDesc());
     }
 }

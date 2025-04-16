@@ -2,6 +2,8 @@ package tn.gest.fourni.controller;
 
 import tn.gest.fourni.models.HistoriqueAchats;
 import tn.gest.fourni.service.HistoriqueAchatsService;
+
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -12,12 +14,10 @@ import java.util.List;
 @RequestMapping("/api/historique")
 @CrossOrigin(origins = "http://localhost:4200")
 public class HistoriqueAchatsController {
+	@Autowired
+    private  HistoriqueAchatsService historiqueAchatsService;
 
-    private final HistoriqueAchatsService historiqueAchatsService;
-
-    public HistoriqueAchatsController(HistoriqueAchatsService historiqueAchatsService) {
-        this.historiqueAchatsService = historiqueAchatsService;
-    }
+    
 
     @PostMapping("/fournisseur/{fournisseurId}")
     public ResponseEntity<HistoriqueAchats> createHistorique(
