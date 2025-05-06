@@ -19,14 +19,7 @@ public class HistoriqueAchatsController {
 
     
 
-    @PostMapping("/fournisseur/{fournisseurId}")
-    public ResponseEntity<HistoriqueAchats> createHistorique(
-            @RequestBody HistoriqueAchats historique,
-            @PathVariable Long fournisseurId) {
-        return new ResponseEntity<>(
-                historiqueAchatsService.createHistorique(historique, fournisseurId),
-                HttpStatus.CREATED);
-    }
+
 
     @GetMapping("/fournisseur/{fournisseurId}")
     public ResponseEntity<List<HistoriqueAchats>> getByFournisseur(@PathVariable Long fournisseurId) {

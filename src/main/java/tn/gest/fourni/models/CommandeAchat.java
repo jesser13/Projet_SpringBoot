@@ -3,6 +3,8 @@ package tn.gest.fourni.models;
 import java.time.LocalDate;
 import java.util.List;
 
+import com.fasterxml.jackson.annotation.JsonManagedReference;
+
 import jakarta.persistence.CascadeType;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
@@ -23,11 +25,14 @@ public class CommandeAchat {
     @JoinColumn(name = "fournisseur_id")
     private Fournisseur fournisseur;
     
+    private LocalDate dateLivraison; // 
     private LocalDate date;
     private String statut; // "EN_COURS", "LIVREE", "ANNULEE"
     private Double montant;
     
     @OneToMany(mappedBy = "commande", cascade = CascadeType.ALL)
+    @JsonManagedReference
+
     private List<LigneCommandeAchat> lignes;
     
     

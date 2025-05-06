@@ -1,5 +1,7 @@
 package tn.gest.fourni.models;
 
+import com.fasterxml.jackson.annotation.JsonBackReference;
+
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
@@ -16,6 +18,8 @@ public class LigneCommandeAchat {
     
     @ManyToOne
     @JoinColumn(name = "commande_id")
+    @JsonBackReference
+
     private CommandeAchat commande;
     
     private String produit;

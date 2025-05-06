@@ -2,15 +2,18 @@ package tn.gest.fourni.service;
 
 import tn.gest.fourni.models.CommandeAchat;
 import tn.gest.fourni.models.Fournisseur;
+import tn.gest.fourni.models.HistoriqueAchats;
 import tn.gest.fourni.models.LigneCommandeAchat;
 import tn.gest.fourni.repository.CommandeAchatRepository;
 import tn.gest.fourni.repository.FournisseurRepository;
+import tn.gest.fourni.repository.HistoriqueAchatsRepository;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
+import java.time.temporal.ChronoUnit;
 import java.util.List;
 
 @Service
@@ -22,6 +25,10 @@ public class CommandeAchatService {
 
     @Autowired
     private FournisseurRepository fournisseurRepository;
+    
+    @Autowired
+    private HistoriqueAchatsRepository historiqueAchatsRepository;
+
 
     // ➕ Créer une nouvelle commande
     public CommandeAchat createCommande(CommandeAchat commande, Long fournisseurId) {
@@ -95,12 +102,32 @@ public class CommandeAchatService {
     // ✅ Valider une commande
     public CommandeAchat validerCommande(Long id) {
         CommandeAchat commande = getCommandeById(id);
+
         if (!commande.getStatut().equals("EN_COURS")) {
             throw new IllegalStateException("Seules les commandes EN_COURS peuvent être validées");
         }
+        commande.setDateLivraison(LocalDate.now());
+
+        long delai = ChronoUnit.DAYS.between(commande.getDate(), commande.getDateLivraison());
+
+
+        // Pour chaque ligne de commande, créer un enregistrement dans l'historique
+        for (LigneCommandeAchat ligne : commande.getLignes()) {
+            HistoriqueAchats historique = new HistoriqueAchats();
+            historique.setFournisseur(commande.getFournisseur());
+            historique.setProduit(ligne.getProduit());
+            historique.setQuantite(ligne.getQuantite());
+
+            // Délai fictif ici (par exemple, on suppose que la commande est livrée 5 jours après)
+            historique.setDelaiLivraison((int) delai);  // Tu peux changer cette logique selon tes besoins
+
+            historiqueAchatsRepository.save(historique);
+        }
+
         commande.setStatut("LIVREE");
         return commandeAchatRepository.save(commande);
     }
+
 
     // 🔄 Changer statut manuellement
     public CommandeAchat changeStatutCommande(Long id, String nouveauStatut) {
