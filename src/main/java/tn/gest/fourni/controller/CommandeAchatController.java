@@ -8,21 +8,17 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.time.LocalDate;
 import java.util.List;
 
 @RestController
 @RequestMapping("/api/commandes")
 @CrossOrigin(origins = "http://localhost:4200")
 public class CommandeAchatController {
-	@Autowired
-    private  CommandeAchatService commandeAchatService;
 
-    
-  
+    @Autowired
+    private CommandeAchatService commandeAchatService;
 
-    /**
-     * Crée une commande pour un fournisseur donné
-     */
     @PostMapping("/fournisseur/{fournisseurId}")
     public ResponseEntity<CommandeAchat> createCommande(
             @RequestBody CommandeAchat commande,
@@ -31,59 +27,63 @@ public class CommandeAchatController {
         return new ResponseEntity<>(createdCommande, HttpStatus.CREATED);
     }
 
-    /**
-     * Récupère toutes les commandes
-     */
+    @PutMapping("/{id}")
+    public ResponseEntity<CommandeAchat> updateCommande(
+            @PathVariable Long id,
+            @RequestBody CommandeAchat commandeDetails) {
+        CommandeAchat updatedCommande = commandeAchatService.updateCommande(id, commandeDetails);
+        return ResponseEntity.ok(updatedCommande);
+    }
+
     @GetMapping
     public ResponseEntity<List<CommandeAchat>> getAllCommandes() {
         List<CommandeAchat> commandes = commandeAchatService.getAllCommandes();
         return ResponseEntity.ok(commandes);
     }
 
-    /**
-     * Récupère une commande par son ID
-     */
     @GetMapping("/{id}")
     public ResponseEntity<CommandeAchat> getCommandeById(@PathVariable Long id) {
         CommandeAchat commande = commandeAchatService.getCommandeById(id);
         return ResponseEntity.ok(commande);
     }
 
-    /**
-     * Récupère toutes les commandes d'un fournisseur spécifique
-     */
+    @DeleteMapping("/{id}")
+    public ResponseEntity<Void> deleteCommande(@PathVariable Long id) {
+        commandeAchatService.deleteCommande(id);
+        return ResponseEntity.noContent().build();
+    }
+
     @GetMapping("/fournisseur/{fournisseurId}")
     public ResponseEntity<List<CommandeAchat>> getCommandesByFournisseur(@PathVariable Long fournisseurId) {
         List<CommandeAchat> commandes = commandeAchatService.getCommandesByFournisseur(fournisseurId);
         return ResponseEntity.ok(commandes);
     }
 
-    /**
-     * Récupère toutes les commandes ayant un statut donné
-     */
     @GetMapping("/statut/{statut}")
     public ResponseEntity<List<CommandeAchat>> getCommandesByStatut(@PathVariable String statut) {
         List<CommandeAchat> commandes = commandeAchatService.getCommandesByStatut(statut);
         return ResponseEntity.ok(commandes);
     }
 
-    /**
-     * Met à jour le statut d'une commande
-     */
-    @PutMapping("/{id}/statut")
-    public ResponseEntity<CommandeAchat> updateStatut(
-            @PathVariable Long id,
-            @RequestParam String statut) {
-        CommandeAchat updatedCommande = commandeAchatService.changeStatutCommande(id, statut);
-        return ResponseEntity.ok(updatedCommande);
+    @GetMapping("/dates")
+    public ResponseEntity<List<CommandeAchat>> getCommandesBetweenDates(
+            @RequestParam LocalDate startDate,
+            @RequestParam LocalDate endDate) {
+        List<CommandeAchat> commandes = commandeAchatService.getCommandesBetweenDates(startDate, endDate);
+        return ResponseEntity.ok(commandes);
     }
 
-    /**
-     * Valide une commande (change son statut à "Validée" ou équivalent)
-     */
     @PostMapping("/{id}/valider")
     public ResponseEntity<CommandeAchat> validerCommande(@PathVariable Long id) {
         CommandeAchat commandeValidee = commandeAchatService.validerCommande(id);
         return ResponseEntity.ok(commandeValidee);
+    }
+
+    @PutMapping("/{id}/statut")
+    public ResponseEntity<CommandeAchat> changeStatutCommande(
+            @PathVariable Long id,
+            @RequestParam String statut) {
+        CommandeAchat updatedCommande = commandeAchatService.changeStatutCommande(id, statut);
+        return ResponseEntity.ok(updatedCommande);
     }
 }

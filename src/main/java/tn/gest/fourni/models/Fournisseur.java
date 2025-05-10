@@ -2,6 +2,8 @@ package tn.gest.fourni.models;
 
 import java.util.List;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
+
 import jakarta.persistence.CascadeType;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
@@ -21,9 +23,11 @@ public class Fournisseur {
     private Double note;
     
     @OneToMany(mappedBy = "fournisseur", cascade = CascadeType.ALL)
+    @JsonIgnore
     private List<CommandeAchat> commandes;
     
     @OneToMany(mappedBy = "fournisseur", cascade = CascadeType.ALL)
+    @JsonIgnore
     private List<HistoriqueAchats> historique;
 
 	

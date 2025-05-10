@@ -7,6 +7,7 @@ import com.fasterxml.jackson.annotation.JsonManagedReference;
 
 import jakarta.persistence.CascadeType;
 import jakarta.persistence.Entity;
+import jakarta.persistence.FetchType;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
@@ -30,7 +31,7 @@ public class CommandeAchat {
     private String statut; // "EN_COURS", "LIVREE", "ANNULEE"
     private Double montant;
     
-    @OneToMany(mappedBy = "commande", cascade = CascadeType.ALL)
+    @OneToMany(mappedBy = "commande", cascade = CascadeType.ALL ,fetch = FetchType.LAZY)
     @JsonManagedReference
 
     private List<LigneCommandeAchat> lignes;

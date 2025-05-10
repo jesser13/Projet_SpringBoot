@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Gestion des Commandes d'Achat</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
+</head>
+<body>
+    <div class="container mt-5">
+        <h2>Créer une Commande d'Achat</h2>
+        <form id="commandeForm">
+            <div class="mb-3">
+                <label for="fournisseur" class="form-label">Fournisseur</label>
+                <select id="fournisseur" name="fournisseur" class="form-select" required></select>
+            </div>
+            <div class="mb-3">
+                <label for="dateLivraison" class="form-label">Date de Livraison</label>
+                <input type="date" id="dateLivraison" name="dateLivraison" class="form-control" required>
+            </div>
+            <h4>Lignes de Commande</h4>
+            <table class="table">
+                <thead>
+                    <tr>
+                        <th>Produit</th>
+                        <th>Quantité</th>
+                        <th>Prix Unitaire</th>
+                        <th>Montant</th>
+                        <th>Action</th>
+                    </tr>
+                </thead>
+                <tbody id="lignesTable"></tbody>
+            </table>
+            <button type="button" id="addLigne" class="btn btn-success mb-3">Ajouter Ligne</button>
+            <button type="submit" class="btn btn-primary">Créer Commande</button>
+        </form>
+
+        <h2 class="mt-5">Liste des Commandes</h2>
+        <div class="mb-3">
+            <label for="filtreStatut" class="form-label">Filtrer par statut :</label>
+            <select id="filtreStatut" class="form-select">
+                <option value="">Tous</option>
+                <option value="EN_COURS">En cours</option>
+                <option value="VALIDÉE">Validée</option>
+                <option value="ANNULÉE">Annulée</option>
+            </select>
+        </div>
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>Fournisseur</th>
+                    <th>Date de Livraison</th>
+                    <th>Statut</th>
+                    <th>Montant Total</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody id="commandesTable"></tbody>
+        </table>
+    </div>
+
+    <script>
+        axios.get('http://localhost:8080/api/fournisseurs')
+            .then(response => {
+                response.data.forEach(fournisseur => {
+                    $('#fournisseur').append(`<option value="${fournisseur.id}">${fournisseur.nom}</option>`);
+                });
+            })
+            .catch(error => console.error("Erreur lors du chargement des fournisseurs : ", error));
+
+        $('#addLigne').on('click', function() {
+            $('#lignesTable').append(`
+                <tr>
+                    <td><input type="text" class="form-control produit" required></td>
+                    <td><input type="number" class="form-control quantite" required></td>
+                    <td><input type="number" step="0.01" class="form-control prixUnitaire" required></td>
+                    <td><input type="number" step="0.01" class="form-control montant" readonly></td>
+                    <td><button type="button" class="btn btn-danger removeLigne">Supprimer</button></td>
+                </tr>
+            `);
+        });
+
+        $(document).on('input', '.quantite, .prixUnitaire', function() {
+            const row = $(this).closest('tr');
+            const quantite = parseFloat(row.find('.quantite').val()) || 0;
+            const prixUnitaire = parseFloat(row.find('.prixUnitaire').val()) || 0;
+            row.find('.montant').val((quantite * prixUnitaire).toFixed(2));
+        });
+
+        $(document).on('click', '.removeLigne', function() {
+            $(this).closest('tr').remove();
+        });
+
+        function loadCommandes(statut = "") {
+        	axios.get('http://localhost:8080/api/commandes'.trim())
+                .then(response => {
+                    $('#commandesTable').empty();
+                    response.data.forEach(commande => {
+                        if (!statut || commande.statut === statut) {
+                            const totalMontant = commande.lignes.reduce((acc, ligne) => acc + (ligne.quantite * ligne.prixUnitaire), 0).toFixed(2);
+                            $('#commandesTable').append(`
+                                <tr>
+                                    <td>${commande.id}</td>
+                                    <td>${commande.fournisseur.nom}</td>
+                                    <td>${commande.dateLivraison}</td>
+                                    <td>${commande.statut}</td>
+                                    <td>${totalMontant} €</td>
+                                    <td>
+                                        <button class="btn btn-success validerCommande" data-id="${commande.id}">Valider</button>
+                                    </td>
+                                </tr>
+                            `);
+                        }
+                    });
+                })
+                .catch(error => console.error("Erreur lors du chargement des commandes : ", error));
+        }
+
+        $('#filtreStatut').on('change', function() {
+            loadCommandes(this.value);
+        });
+
+        loadCommandes();
+
+        $(document).on('click', '.validerCommande', function() {
+            const id = $(this).data('id');
+            axios.post(`http://localhost:8080/api/commandes/${id}/valider`)
+                .then(response => {
+                    alert('Commande validée avec succès');
+                    loadCommandes();
+                })
+                .catch(error => console.error("Erreur lors de la validation : ", error));
+        });
+
+    </script>
+</body>
+</html>

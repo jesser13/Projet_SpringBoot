@@ -1,0 +1,328 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gestion des Fournisseurs</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css">
+    <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+    <style>
+        body {
+            background-color: #f8f9fa;
+        }
+        .card {
+            border-radius: 10px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            margin-bottom: 20px;
+            border: none;
+        }
+        .card-header {
+            background-color: #4e73df;
+            color: white;
+            border-radius: 10px 10px 0 0 !important;
+            padding: 15px 20px;
+        }
+        .badge-note {
+            font-size: 0.9em;
+            padding: 5px 10px;
+            border-radius: 10px;
+        }
+        .btn-action {
+            margin-right: 5px;
+        }
+        .form-section {
+            background-color: white;
+            padding: 20px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+        }
+        .search-section {
+            background-color: white;
+            padding: 20px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+        }
+        .top-section {
+            background-color: white;
+            padding: 20px;
+            border-radius: 10px;
+        }
+        .table th {
+            background-color: #f8f9fa;
+        }
+    </style>
+</head>
+<body>
+    <div class="container py-4">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h1 class="h3 mb-0 text-gray-800">
+                <i class="bi bi-people-fill me-2"></i>Gestion des Fournisseurs
+            </h1>
+        </div>
+
+        <!-- Formulaire d'ajout/modification -->
+        <div class="card mb-4">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="bi bi-person-plus me-2"></i>Formulaire Fournisseur</h5>
+            </div>
+            <div class="card-body">
+                <form id="fournisseurForm" onsubmit="saveFournisseur(event)">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="nom" class="form-label">Nom</label>
+                                <input type="text" class="form-control" id="nom" required>
+                            </div>
+                            <div class="mb-3">
+                                <label for="contact" class="form-label">Contact</label>
+                                <input type="text" class="form-control" id="contact" required>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="qualiteService" class="form-label">Qualité de Service</label>
+                                <input type="text" class="form-control" id="qualiteService" required>
+                            </div>
+                            <div class="mb-3">
+                                <label for="note" class="form-label">Note (0-5)</label>
+                                <input type="number" class="form-control" id="note" min="0" max="5" step="0.1" required>
+                            </div>
+                        </div>
+                    </div>
+                    <input type="hidden" id="fournisseurId">
+                    <div class="d-flex justify-content-end">
+                        <button type="submit" class="btn btn-primary">
+                            <i class="bi bi-save me-2"></i>Enregistrer
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- Liste des fournisseurs -->
+        <div class="card mb-4">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h5 class="mb-0"><i class="bi bi-list-ul me-2"></i>Liste des Fournisseurs</h5>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead>
+                            <tr>
+                                <th>Nom</th>
+                                <th>Contact</th>
+                                <th>Qualité de Service</th>
+                                <th>Note</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="fournisseurList" class="table-group-divider">
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- Recherche et Top Fournisseurs -->
+        <div class="row">
+            <!-- Recherche -->
+            <div class="col-md-6">
+                <div class="card h-100">
+                    <div class="card-header">
+                        <h5 class="mb-0"><i class="bi bi-search me-2"></i>Recherche</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="mb-3">
+                            <label for="searchQualite" class="form-label">Par qualité de service :</label>
+                            <input type="text" id="searchQualite" class="form-control mb-2" placeholder="Entrez une qualité">
+                        </div>
+                        <button onclick="searchByQualite()" class="btn btn-primary w-100">
+                            <i class="bi bi-search me-2"></i>Rechercher
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Meilleurs Fournisseurs -->
+            <div class="col-md-6">
+                <div class="card h-100">
+                    <div class="card-header">
+                        <h5 class="mb-0"><i class="bi bi-trophy me-2"></i>Top Fournisseurs</h5>
+                    </div>
+                    <div class="card-body">
+                        <button onclick="loadTopFournisseurs()" class="btn btn-info w-100 mb-3">
+                            <i class="bi bi-arrow-repeat me-2"></i>Afficher les Meilleurs
+                        </button>
+                        <div class="list-group" id="topFournisseursList"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const API_URL = "http://localhost:8080/api/fournisseurs";
+
+        // Charger tous les fournisseurs
+        function loadFournisseurs() {
+            axios.get(API_URL)
+                .then(response => {
+                    const fournisseurs = response.data;
+                    const list = document.getElementById("fournisseurList");
+                    list.innerHTML = "";
+                    fournisseurs.forEach(f => {
+                        const noteClass = f.note >= 4 ? "bg-success" : f.note >= 3 ? "bg-primary" : f.note >= 2 ? "bg-warning" : "bg-danger";
+                        list.innerHTML += `
+                            <tr>
+                                <td>${f.nom}</td>
+                                <td>${f.contact}</td>
+                                <td>${f.qualiteService}</td>
+                                <td><span class="badge ${noteClass} badge-note">${f.note}</span></td>
+                                <td>
+                                    <button onclick="editFournisseur(${f.id})" class="btn btn-sm btn-warning btn-action">
+                                        <i class="bi bi-pencil"></i>
+                                    </button>
+                                    <button onclick="deleteFournisseur(${f.id})" class="btn btn-sm btn-danger btn-action">
+                                        <i class="bi bi-trash"></i>
+                                    </button>
+                                </td>
+                            </tr>`;
+                    });
+                })
+                .catch(error => console.error(error));
+        }
+
+        // Charger les meilleurs fournisseurs
+        function loadTopFournisseurs() {
+            axios.get(`${API_URL}/top`)
+                .then(response => {
+                    const fournisseurs = response.data;
+                    const list = document.getElementById("topFournisseursList");
+                    list.innerHTML = "";
+                    fournisseurs.forEach(f => {
+                        const noteClass = f.note >= 4 ? "bg-success" : f.note >= 3 ? "bg-primary" : f.note >= 2 ? "bg-warning" : "bg-danger";
+                        list.innerHTML += `
+                            <div class="list-group-item d-flex justify-content-between align-items-center">
+                                ${f.nom}
+                                <span class="badge ${noteClass} badge-note">${f.note}</span>
+                            </div>`;
+                    });
+                })
+                .catch(error => console.error(error));
+        }
+
+        // Sauvegarder un fournisseur (ajout ou modification)
+        function saveFournisseur(event) {
+            event.preventDefault();
+            const id = document.getElementById("fournisseurId").value;
+            const fournisseur = {
+                nom: document.getElementById("nom").value,
+                contact: document.getElementById("contact").value,
+                qualiteService: document.getElementById("qualiteService").value,
+                note: document.getElementById("note").value
+            };
+
+            if (id) {
+                axios.put(`${API_URL}/${id}`, fournisseur)
+                    .then(() => {
+                        loadFournisseurs();
+                        showAlert('Fournisseur modifié avec succès', 'success');
+                    });
+            } else {
+                axios.post(API_URL, fournisseur)
+                    .then(() => {
+                        loadFournisseurs();
+                        showAlert('Fournisseur ajouté avec succès', 'success');
+                    });
+            }
+            event.target.reset();
+            document.getElementById("fournisseurId").value = "";
+        }
+
+        // Modifier un fournisseur
+        function editFournisseur(id) {
+            axios.get(`${API_URL}/${id}`)
+                .then(response => {
+                    const f = response.data;
+                    document.getElementById("nom").value = f.nom;
+                    document.getElementById("contact").value = f.contact;
+                    document.getElementById("qualiteService").value = f.qualiteService;
+                    document.getElementById("note").value = f.note;
+                    document.getElementById("fournisseurId").value = f.id;
+                    window.scrollTo({ top: 0, behavior: 'smooth' });
+                })
+                .catch(error => console.error(error));
+        }
+
+        // Supprimer un fournisseur
+        function deleteFournisseur(id) {
+            if (confirm("Êtes-vous sûr de vouloir supprimer ce fournisseur ?")) {
+                axios.delete(`${API_URL}/${id}`)
+                    .then(() => {
+                        loadFournisseurs();
+                        showAlert('Fournisseur supprimé avec succès', 'success');
+                    })
+                    .catch(error => console.error(error));
+            }
+        }
+
+        // Recherche par qualité de service
+        function searchByQualite() {
+            const qualite = document.getElementById("searchQualite").value;
+            if (qualite.trim() === "") {
+                loadFournisseurs();
+                return;
+            }
+            
+            axios.get(`${API_URL}/qualite/${qualite}`)
+                .then(response => {
+                    const fournisseurs = response.data;
+                    const list = document.getElementById("fournisseurList");
+                    list.innerHTML = "";
+                    fournisseurs.forEach(f => {
+                        const noteClass = f.note >= 4 ? "bg-success" : f.note >= 3 ? "bg-primary" : f.note >= 2 ? "bg-warning" : "bg-danger";
+                        list.innerHTML += `
+                            <tr>
+                                <td>${f.nom}</td>
+                                <td>${f.contact}</td>
+                                <td>${f.qualiteService}</td>
+                                <td><span class="badge ${noteClass} badge-note">${f.note}</span></td>
+                                <td>
+                                    <button onclick="editFournisseur(${f.id})" class="btn btn-sm btn-warning btn-action">
+                                        <i class="bi bi-pencil"></i>
+                                    </button>
+                                    <button onclick="deleteFournisseur(${f.id})" class="btn btn-sm btn-danger btn-action">
+                                        <i class="bi bi-trash"></i>
+                                    </button>
+                                </td>
+                            </tr>`;
+                    });
+                })
+                .catch(error => {
+                    console.error(error);
+                    showAlert('Aucun fournisseur trouvé avec cette qualité de service', 'warning');
+                });
+        }
+
+        // Afficher une notification
+        function showAlert(message, type) {
+            const alertDiv = document.createElement('div');
+            alertDiv.className = `alert alert-${type} alert-dismissible fade show position-fixed top-0 end-0 m-3`;
+            alertDiv.style.zIndex = "9999";
+            alertDiv.innerHTML = `
+                ${message}
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            `;
+            document.body.appendChild(alertDiv);
+            
+            setTimeout(() => {
+                alertDiv.remove();
+            }, 3000);
+        }
+
+        window.onload = loadFournisseurs;
+    </script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

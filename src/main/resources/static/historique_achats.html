@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Historique des Achats</title>
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+</head>
+<body>
+    <div class="container">
+        <h1 class="mt-5">Historique des Achats</h1>
+
+        <!-- Recherche par fournisseur -->
+        <form action="#" method="get" class="mb-3">
+            <div class="form-row">
+                <div class="col">
+                    <input type="text" name="fournisseur" class="form-control" placeholder="Nom du fournisseur">
+                </div>
+                <div class="col">
+                    <button type="submit" class="btn btn-primary">Filtrer</button>
+                </div>
+            </div>
+        </form>
+
+        <!-- Tableau des historiques -->
+        <table class="table table-bordered">
+            <thead>
+                <tr>
+                    <th>Fournisseur</th>
+                    <th>Produit</th>
+                    <th>Quantité</th>
+                    <th>Délai de Livraison (jours)</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr th:each="historique : ${historiques}">
+                    <td th:text="${historique.fournisseur.nom}"></td>
+                    <td th:text="${historique.produit}"></td>
+                    <td th:text="${historique.quantite}"></td>
+                    <td th:text="${historique.delaiLivraison}"></td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+</body>
+</html>

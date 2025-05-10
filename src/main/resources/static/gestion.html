@@ -1,0 +1,178 @@
+""<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gestion des Commandes d'Achat</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css">
+    <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+    <style>
+        body {
+            background-color: #f8f9fa;
+        }
+        .card {
+            border-radius: 10px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            margin-bottom: 20px;
+            border: none;
+        }
+        .card-header {
+            background-color: #4e73df;
+            color: white;
+            border-radius: 10px 10px 0 0 !important;
+            padding: 15px 20px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container py-4">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h1 class="h3 mb-0 text-gray-800">
+                <i class="bi bi-file-earmark-text-fill me-2"></i>Gestion des Commandes d'Achat
+            </h1>
+        </div>
+
+        <!-- Formulaire d'ajout/modification -->
+        <div class="card mb-4">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="bi bi-pencil-square me-2"></i>Formulaire de Commande d'Achat</h5>
+            </div>
+            <div class="card-body">
+                <form id="commandeForm" onsubmit="saveCommande(event)">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="fournisseur" class="form-label">Fournisseur</label>
+                                <input type="text" class="form-control" id="fournisseur" required>
+                            </div>
+                            <div class="mb-3">
+                                <label for="produit" class="form-label">Produit</label>
+                                <input type="text" class="form-control" id="produit" required>
+                            </div>
+                            <div class="mb-3">
+                                <label for="quantite" class="form-label">Quantité</label>
+                                <input type="number" class="form-control" id="quantite" required>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="prixUnitaire" class="form-label">Prix Unitaire</label>
+                                <input type="number" class="form-control" id="prixUnitaire" step="0.01" required>
+                            </div>
+                            <div class="mb-3">
+                                <label for="dateCommande" class="form-label">Date de Commande</label>
+                                <input type="date" class="form-control" id="dateCommande" required>
+                            </div>
+                        </div>
+                    </div>
+                    <input type="hidden" id="commandeId">
+                    <div class="d-flex justify-content-end">
+                        <button type="submit" class="btn btn-primary">
+                            <i class="bi bi-save me-2"></i>Enregistrer
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- Liste des Commandes d'Achat -->
+        <div class="card mb-4">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="bi bi-list-ul me-2"></i>Liste des Commandes d'Achat</h5>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead>
+                            <tr>
+                                <th>Fournisseur</th>
+                                <th>Produit</th>
+                                <th>Quantité</th>
+                                <th>Prix Unitaire</th>
+                                <th>Date de Commande</th>
+                                <th>Total</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="commandeList" class="table-group-divider">
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const API_URL = "http://localhost:8080/api/commandes";
+
+        function loadCommandes() {
+            axios.get(API_URL)
+                .then(response => {
+                    const commandes = response.data;
+                    const list = document.getElementById("commandeList");
+                    list.innerHTML = "";
+                    commandes.forEach(c => {
+                        list.innerHTML += `
+                            <tr>
+                                <td>${c.fournisseur}</td>
+                                <td>${c.produit}</td>
+                                <td>${c.quantite}</td>
+                                <td>${c.prixUnitaire} €</td>
+                                <td>${c.dateCommande}</td>
+                                <td>${(c.quantite * c.prixUnitaire).toFixed(2)} €</td>
+                                <td>
+                                    <button onclick="editCommande(${c.id})" class="btn btn-sm btn-warning">
+                                        <i class="bi bi-pencil"></i>
+                                    </button>
+                                    <button onclick="deleteCommande(${c.id})" class="btn btn-sm btn-danger">
+                                        <i class="bi bi-trash"></i>
+                                    </button>
+                                </td>
+                            </tr>`;
+                    });
+                })
+                .catch(error => console.error(error));
+        }
+
+        function saveCommande(event) {
+            event.preventDefault();
+            const id = document.getElementById("commandeId").value;
+            const commande = {
+                fournisseur: document.getElementById("fournisseur").value,
+                produit: document.getElementById("produit").value,
+                quantite: document.getElementById("quantite").value,
+                prixUnitaire: document.getElementById("prixUnitaire").value,
+                dateCommande: document.getElementById("dateCommande").value,
+            };
+            if (id) {
+                axios.put(`${API_URL}/${id}`, commande).then(loadCommandes);
+            } else {
+                axios.post(API_URL, commande).then(loadCommandes);
+            }
+            event.target.reset();
+        }
+
+        function editCommande(id) {
+            axios.get(`${API_URL}/${id}`).then(response => {
+                const c = response.data;
+                document.getElementById("fournisseur").value = c.fournisseur;
+                document.getElementById("produit").value = c.produit;
+                document.getElementById("quantite").value = c.quantite;
+                document.getElementById("prixUnitaire").value = c.prixUnitaire;
+                document.getElementById("dateCommande").value = c.dateCommande;
+                document.getElementById("commandeId").value = c.id;
+            });
+        }
+
+        function deleteCommande(id) {
+            if (confirm("Êtes-vous sûr de vouloir supprimer cette commande ?")) {
+                axios.delete(`${API_URL}/${id}`).then(loadCommandes);
+            }
+        }
+
+        window.onload = loadCommandes;
+    </script>
+</body>
+</html>
+""
