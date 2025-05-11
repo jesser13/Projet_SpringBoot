@@ -2,45 +2,319 @@
 <html lang="fr">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Historique des Achats</title>
-    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/chart.js@3.7.1/dist/chart.min.css">
+    <style>
+        .stat-card {
+            border-radius: 10px;
+            padding: 15px;
+            margin-bottom: 20px;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+        }
+        .stat-card h5 {
+            font-size: 1rem;
+            color: #6c757d;
+        }
+        .stat-card .value {
+            font-size: 1.5rem;
+            font-weight: bold;
+        }
+    </style>
 </head>
 <body>
-    <div class="container">
-        <h1 class="mt-5">Historique des Achats</h1>
-
-        <!-- Recherche par fournisseur -->
-        <form action="#" method="get" class="mb-3">
-            <div class="form-row">
-                <div class="col">
-                    <input type="text" name="fournisseur" class="form-control" placeholder="Nom du fournisseur">
-                </div>
-                <div class="col">
-                    <button type="submit" class="btn btn-primary">Filtrer</button>
+    <div class="container mt-4">
+        <h1 class="mb-4">Historique des Achats</h1>
+        
+        <!-- Filtres -->
+        <div class="card mb-4">
+            <div class="card-body">
+                <h5 class="card-title">Filtres</h5>
+                <div class="row">
+                    <div class="col-md-4">
+                        <label for="fournisseurFilter" class="form-label">Fournisseur</label>
+                        <select id="fournisseurFilter" class="form-select">
+                            <option value="">Tous les fournisseurs</option>
+                        </select>
+                    </div>
+                    <div class="col-md-4">
+                        <label for="produitFilter" class="form-label">Produit</label>
+                        <input type="text" id="produitFilter" class="form-control" placeholder="Nom du produit">
+                    </div>
+                    <div class="col-md-4 d-flex align-items-end">
+                        <button id="applyFilters" class="btn btn-primary">Appliquer</button>
+                    </div>
                 </div>
             </div>
-        </form>
-
-        <!-- Tableau des historiques -->
-        <table class="table table-bordered">
-            <thead>
-                <tr>
-                    <th>Fournisseur</th>
-                    <th>Produit</th>
-                    <th>Quantité</th>
-                    <th>Délai de Livraison (jours)</th>
-                </tr>
-            </thead>
-            <tbody>
-                <tr th:each="historique : ${historiques}">
-                    <td th:text="${historique.fournisseur.nom}"></td>
-                    <td th:text="${historique.produit}"></td>
-                    <td th:text="${historique.quantite}"></td>
-                    <td th:text="${historique.delaiLivraison}"></td>
-                </tr>
-            </tbody>
-        </table>
+        </div>
+        
+        <!-- Statistiques -->
+        <div class="row mb-4">
+            <div class="col-md-4">
+                <div class="stat-card bg-light">
+                    <h5>Délai moyen de livraison</h5>
+                    <div id="delaiMoyen" class="value">-- jours</div>
+                    <small id="delaiFournisseur" class="text-muted"></small>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="stat-card bg-light">
+                    <h5>Performance fournisseur</h5>
+                    <div id="performance" class="value">-- %</div>
+                    <small id="performanceFournisseur" class="text-muted"></small>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="stat-card bg-light">
+                    <h5>Top produits</h5>
+                    <div id="topProduits" class="value">--</div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Graphique -->
+        <div class="card mb-4">
+            <div class="card-body">
+                <h5 class="card-title">Statistiques des achats</h5>
+                <canvas id="achatsChart" height="100"></canvas>
+            </div>
+        </div>
+        
+        <!-- Tableau d'historique -->
+        <div class="card">
+            <div class="card-body">
+                <h5 class="card-title">Liste des achats</h5>
+                <div class="table-responsive">
+                    <table class="table table-striped">
+                        <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>Fournisseur</th>
+                                <th>Produit</th>
+                                <th>Quantité</th>
+                                <th>Délai Livraison</th>
+                                <th>Date</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="historiqueTable"></tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
     </div>
+
+    <!-- Modal pour les détails -->
+    <div class="modal fade" id="detailsModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Détails de l'achat</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body" id="modalBody">
+                    <!-- Contenu dynamique -->
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Fermer</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@3.7.1/dist/chart.min.js"></script>
+    <script>
+        // Initialisation
+        const detailsModal = new bootstrap.Modal(document.getElementById('detailsModal'));
+        let achatsChart = null;
+        
+        // Chargement initial
+        $(document).ready(function() {
+            loadFournisseurs();
+            loadHistorique();
+            loadStats();
+            loadTopProduits();
+        });
+        
+        // Charger la liste des fournisseurs
+        function loadFournisseurs() {
+            axios.get('http://localhost:8080/api/fournisseurs')
+                .then(response => {
+                    response.data.forEach(fournisseur => {
+                        $('#fournisseurFilter').append(`<option value="${fournisseur.id}">${fournisseur.nom}</option>`);
+                    });
+                })
+                .catch(error => console.error("Erreur lors du chargement des fournisseurs : ", error));
+        }
+        
+        // Charger l'historique des achats
+        function loadHistorique(fournisseurId = '', produit = '') {
+            let url = 'http://localhost:8080/api/historique';
+            
+            if (fournisseurId) {
+                url = `http://localhost:8080/api/historique/fournisseur/${fournisseurId}`;
+            } else if (produit) {
+                url = `http://localhost:8080/api/historique/produit/${produit}`;
+            }
+            
+            axios.get(url)
+                .then(response => {
+                    $('#historiqueTable').empty();
+                    response.data.forEach(achat => {
+                        $('#historiqueTable').append(`
+                            <tr>
+                                <td>${achat.id}</td>
+                                <td>${achat.fournisseur ? achat.fournisseur.nom : 'N/A'}</td>
+                                <td>${achat.produit}</td>
+                                <td>${achat.quantite}</td>
+                                <td>${achat.delaiLivraison} jours</td>
+                                <td>${new Date(achat.dateAchat).toLocaleDateString()}</td>
+                                <td>
+                                    <button class="btn btn-sm btn-info viewDetails" data-id="${achat.id}">Détails</button>
+                                    <button class="btn btn-sm btn-danger deleteAchat" data-id="${achat.id}">Supprimer</button>
+                                </td>
+                            </tr>
+                        `);
+                    });
+                    
+                    // Mettre à jour le graphique
+                    updateChart(response.data);
+                })
+                .catch(error => console.error("Erreur lors du chargement de l'historique : ", error));
+        }
+        
+        // Charger les statistiques
+        function loadStats(fournisseurId = '') {
+            if (fournisseurId) {
+                // Délai moyen pour le fournisseur sélectionné
+                axios.get(`http://localhost:8080/api/historique/fournisseur/${fournisseurId}/delai-moyen`)
+                    .then(response => {
+                        $('#delaiMoyen').text(response.data.toFixed(1) + ' jours');
+                        $('#delaiFournisseur').text($('#fournisseurFilter option:selected').text());
+                    });
+                
+                // Performance du fournisseur sélectionné
+                axios.get(`http://localhost:8080/api/historique/fournisseur/${fournisseurId}/performance`)
+                    .then(response => {
+                        $('#performance').text(response.data.toFixed(1) + '%');
+                        $('#performanceFournisseur').text($('#fournisseurFilter option:selected').text());
+                    });
+            } else {
+                // Valeurs globales par défaut
+                $('#delaiMoyen').text('-- jours');
+                $('#delaiFournisseur').text('');
+                $('#performance').text('--%');
+                $('#performanceFournisseur').text('');
+            }
+        }
+        
+        // Charger les top produits
+        function loadTopProduits() {
+            axios.get('http://localhost:8080/api/historique/top-produits')
+                .then(response => {
+                    let top3 = response.data.slice(0, 3);
+                    let html = top3.map((prod, index) => 
+                        `${index + 1}. ${prod[0]} (${prod[1]} commandes)`).join('<br>');
+                    $('#topProduits').html(html);
+                });
+        }
+        
+        // Mettre à jour le graphique
+        function updateChart(data) {
+            const ctx = document.getElementById('achatsChart').getContext('2d');
+            
+            // Grouper par produit et calculer les quantités totales
+            const produitsMap = {};
+            data.forEach(achat => {
+                if (!produitsMap[achat.produit]) {
+                    produitsMap[achat.produit] = 0;
+                }
+                produitsMap[achat.produit] += achat.quantite;
+            });
+            
+            const produits = Object.keys(produitsMap);
+            const quantites = Object.values(produitsMap);
+            
+            if (achatsChart) {
+                achatsChart.destroy();
+            }
+            
+            achatsChart = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: produits,
+                    datasets: [{
+                        label: 'Quantité achetée',
+                        data: quantites,
+                        backgroundColor: 'rgba(54, 162, 235, 0.5)',
+                        borderColor: 'rgba(54, 162, 235, 1)',
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    scales: {
+                        y: {
+                            beginAtZero: true
+                        }
+                    }
+                }
+            });
+        }
+        
+        // Appliquer les filtres
+        $('#applyFilters').on('click', function() {
+            const fournisseurId = $('#fournisseurFilter').val();
+            const produit = $('#produitFilter').val().trim();
+            
+            if (fournisseurId) {
+                loadHistorique(fournisseurId);
+                loadStats(fournisseurId);
+            } else if (produit) {
+                loadHistorique('', produit);
+                loadStats();
+            } else {
+                loadHistorique();
+                loadStats();
+            }
+        });
+        
+        // Voir les détails d'un achat
+        $(document).on('click', '.viewDetails', function() {
+            const achatId = $(this).data('id');
+            axios.get(`http://localhost:8080/api/historique/${achatId}`)
+                .then(response => {
+                    const achat = response.data;
+                    $('#modalBody').html(`
+                        <p><strong>ID:</strong> ${achat.id}</p>
+                        <p><strong>Fournisseur:</strong> ${achat.fournisseur ? achat.fournisseur.nom : 'N/A'}</p>
+                        <p><strong>Produit:</strong> ${achat.produit}</p>
+                        <p><strong>Quantité:</strong> ${achat.quantite}</p>
+                        <p><strong>Délai de livraison:</strong> ${achat.delaiLivraison} jours</p>
+                        <p><strong>Date d'achat:</strong> ${new Date(achat.dateAchat).toLocaleDateString()}</p>
+                    `);
+                    detailsModal.show();
+                })
+                .catch(error => console.error("Erreur lors du chargement des détails : ", error));
+        });
+        
+        // Supprimer un achat
+        $(document).on('click', '.deleteAchat', function() {
+            if (confirm('Êtes-vous sûr de vouloir supprimer cet achat de l\'historique ?')) {
+                const achatId = $(this).data('id');
+                axios.delete(`http://localhost:8080/api/historique/${achatId}`)
+                    .then(() => {
+                        alert('Achat supprimé avec succès');
+                        loadHistorique();
+                        loadStats();
+                        loadTopProduits();
+                    })
+                    .catch(error => console.error("Erreur lors de la suppression : ", error));
+            }
+        });
+    </script>
 </body>
 </html>

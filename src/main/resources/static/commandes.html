@@ -36,16 +36,7 @@
             <button type="submit" class="btn btn-primary">Créer Commande</button>
         </form>
 
-        <h2 class="mt-5">Liste des Commandes</h2>
-        <div class="mb-3">
-            <label for="filtreStatut" class="form-label">Filtrer par statut :</label>
-            <select id="filtreStatut" class="form-select">
-                <option value="">Tous</option>
-                <option value="EN_COURS">En cours</option>
-                <option value="VALIDÉE">Validée</option>
-                <option value="ANNULÉE">Annulée</option>
-            </select>
-        </div>
+        <h2 class="mt-5">Liste des Commandes en Cours</h2>
         <table class="table">
             <thead>
                 <tr>
@@ -61,7 +52,40 @@
         </table>
     </div>
 
+    <!-- Modal pour afficher les détails de la commande -->
+    <div class="modal fade" id="detailsModal" tabindex="-1" aria-labelledby="detailsModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="detailsModalLabel">Détails de la Commande</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <table class="table">
+                        <thead>
+                            <tr>
+                                <th>Produit</th>
+                                <th>Quantité</th>
+                                <th>Prix Unitaire</th>
+                                <th>Montant</th>
+                            </tr>
+                        </thead>
+                        <tbody id="lignesCommandeTable"></tbody>
+                    </table>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Fermer</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script>
+        // Initialisation du modal Bootstrap
+        const detailsModal = new bootstrap.Modal(document.getElementById('detailsModal'));
+
+        // Charger les fournisseurs
         axios.get('http://localhost:8080/api/fournisseurs')
             .then(response => {
                 response.data.forEach(fournisseur => {
@@ -70,6 +94,7 @@
             })
             .catch(error => console.error("Erreur lors du chargement des fournisseurs : ", error));
 
+        // Ajouter une ligne de commande
         $('#addLigne').on('click', function() {
             $('#lignesTable').append(`
                 <tr>
@@ -82,6 +107,7 @@
             `);
         });
 
+        // Calcul du montant
         $(document).on('input', '.quantite, .prixUnitaire', function() {
             const row = $(this).closest('tr');
             const quantite = parseFloat(row.find('.quantite').val()) || 0;
@@ -89,16 +115,57 @@
             row.find('.montant').val((quantite * prixUnitaire).toFixed(2));
         });
 
+        // Supprimer une ligne
         $(document).on('click', '.removeLigne', function() {
             $(this).closest('tr').remove();
         });
 
-        function loadCommandes(statut = "") {
-        	axios.get('http://localhost:8080/api/commandes'.trim())
+        // Soumission du formulaire
+        $('#commandeForm').on('submit', function(event) {
+            event.preventDefault();
+
+            const fournisseurId = $('#fournisseur').val();
+            const dateLivraison = $('#dateLivraison').val();
+            const lignes = [];
+            
+            $('#lignesTable tr').each(function() {
+                const produit = $(this).find('.produit').val();
+                const quantite = parseFloat($(this).find('.quantite').val()) || 0;
+                const prixUnitaire = parseFloat($(this).find('.prixUnitaire').val()) || 0;
+                const montant = (quantite * prixUnitaire).toFixed(2);
+
+                if (produit && quantite && prixUnitaire) {
+                    lignes.push({ produit, quantite, prixUnitaire, montant });
+                }
+            });
+
+            if (lignes.length > 0) {
+                const commande = {
+                    fournisseurId,
+                    dateLivraison,
+                    lignes
+                };
+
+                axios.post(`http://localhost:8080/api/commandes/fournisseur/${fournisseurId}`, commande)
+                    .then(response => {
+                        alert('Commande créée avec succès');
+                        loadCommandesEnCours(); // Recharge la liste des commandes en cours
+                        $('#commandeForm')[0].reset(); // Réinitialise le formulaire
+                        $('#lignesTable').empty(); // Vide les lignes de commande
+                    })
+                    .catch(error => console.error("Erreur lors de la création de la commande : ", error));
+            } else {
+                alert('Veuillez ajouter des lignes de commande');
+            }
+        });
+
+        // Fonction pour charger les commandes en cours
+        function loadCommandesEnCours() {
+            axios.get('http://localhost:8080/api/commandes')
                 .then(response => {
                     $('#commandesTable').empty();
                     response.data.forEach(commande => {
-                        if (!statut || commande.statut === statut) {
+                        if (commande.statut === "EN_COURS") {
                             const totalMontant = commande.lignes.reduce((acc, ligne) => acc + (ligne.quantite * ligne.prixUnitaire), 0).toFixed(2);
                             $('#commandesTable').append(`
                                 <tr>
@@ -108,6 +175,7 @@
                                     <td>${commande.statut}</td>
                                     <td>${totalMontant} €</td>
                                     <td>
+                                        <button class="btn btn-info detailsCommande" data-id="${commande.id}">Détails</button>
                                         <button class="btn btn-success validerCommande" data-id="${commande.id}">Valider</button>
                                     </td>
                                 </tr>
@@ -118,22 +186,41 @@
                 .catch(error => console.error("Erreur lors du chargement des commandes : ", error));
         }
 
-        $('#filtreStatut').on('change', function() {
-            loadCommandes(this.value);
-        });
-
-        loadCommandes();
-
+        // Valider une commande
         $(document).on('click', '.validerCommande', function() {
             const id = $(this).data('id');
             axios.post(`http://localhost:8080/api/commandes/${id}/valider`)
                 .then(response => {
                     alert('Commande validée avec succès');
-                    loadCommandes();
+                    loadCommandesEnCours(); // Recharge la liste des commandes en cours
                 })
                 .catch(error => console.error("Erreur lors de la validation : ", error));
         });
 
+        // Afficher les détails d'une commande
+        $(document).on('click', '.detailsCommande', function() {
+            const commandeId = $(this).data('id');
+            axios.get(`http://localhost:8080/api/lignes-commande/commande/${commandeId}`)
+                .then(response => {
+                    $('#lignesCommandeTable').empty();
+                    response.data.forEach(ligne => {
+                        $('#lignesCommandeTable').append(`
+                            <tr>
+                                <td>${ligne.produit}</td>
+                                <td>${ligne.quantite}</td>
+                                <td>${ligne.prixUnitaire} €</td>
+                                <td>${(ligne.quantite * ligne.prixUnitaire).toFixed(2)} €</td>
+                            </tr>
+                        `);
+                    });
+                    $('#detailsModalLabel').text(`Détails de la Commande #${commandeId}`);
+                    detailsModal.show();
+                })
+                .catch(error => console.error("Erreur lors du chargement des lignes de commande : ", error));
+        });
+
+        // Charger les commandes en cours au démarrage
+        loadCommandesEnCours();
     </script>
 </body>
 </html>
