@@ -44,6 +44,13 @@ public class CommandeAchatService {
         }
 
         commande.setMontant(calculerMontantTotal(commande.getLignes()));
+        
+        // ➕ Vérification et ajout de la date de livraison
+        if (commande.getDateLivraison() == null) {
+            throw new RuntimeException("La date de livraison est obligatoire.");
+        } else if (commande.getDateLivraison().isBefore(LocalDate.now())) {
+            throw new RuntimeException("La date de livraison ne peut pas être dans le passé.");
+        }
         return commandeAchatRepository.save(commande);
     }
 

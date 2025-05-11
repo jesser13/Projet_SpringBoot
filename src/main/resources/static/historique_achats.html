@@ -95,7 +95,7 @@
                                 <th>Produit</th>
                                 <th>Quantité</th>
                                 <th>Délai Livraison</th>
-                                <th>Date</th>
+                               
                                 <th>Actions</th>
                             </tr>
                         </thead>
@@ -171,7 +171,6 @@
                                 <td>${achat.produit}</td>
                                 <td>${achat.quantite}</td>
                                 <td>${achat.delaiLivraison} jours</td>
-                                <td>${new Date(achat.dateAchat).toLocaleDateString()}</td>
                                 <td>
                                     <button class="btn btn-sm btn-info viewDetails" data-id="${achat.id}">Détails</button>
                                     <button class="btn btn-sm btn-danger deleteAchat" data-id="${achat.id}">Supprimer</button>
@@ -294,7 +293,6 @@
                         <p><strong>Produit:</strong> ${achat.produit}</p>
                         <p><strong>Quantité:</strong> ${achat.quantite}</p>
                         <p><strong>Délai de livraison:</strong> ${achat.delaiLivraison} jours</p>
-                        <p><strong>Date d'achat:</strong> ${new Date(achat.dateAchat).toLocaleDateString()}</p>
                     `);
                     detailsModal.show();
                 })
