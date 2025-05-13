@@ -32,7 +32,7 @@ public class CommandeAchat {
     private Double montant;
     
     @OneToMany(mappedBy = "commande", cascade = CascadeType.ALL ,fetch = FetchType.LAZY)
-    @JsonManagedReference
+    
 
     private List<LigneCommandeAchat> lignes;
     
